@@ -1,0 +1,67 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if request is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if caller owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // User Profile Document: users/{userId}
+    match /users/{userId} {
+      // User can read their own profile
+      allow read: if isOwner(userId);
+      
+      // User can create their own profile with valid fields
+      allow create: if isOwner(userId)
+                    && request.resource.data.keys().hasAll(['name', 'email'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.email is string
+                    && request.resource.data.email.size() > 0;
+      
+      // User can update their own profile
+      allow update: if isOwner(userId)
+                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['email']));
+      
+      // Prevent deleting user profiles through client directly
+      allow delete: if isOwner(userId);
+      
+      // Todo Items Subcollection: users/{userId}/todos/{todoId}
+      match /todos/{todoId} {
+        // User can only read their own todos
+        allow read: if isOwner(userId);
+        
+        // User can only create todos under their own collection
+        allow create: if isOwner(userId)
+                      && request.resource.data.keys().hasAll(['title', 'isCompleted', 'dueDate'])
+                      && request.resource.data.title is string
+                      && request.resource.data.title.size() > 0
+                      && request.resource.data.title.size() <= 200
+                      && request.resource.data.isCompleted is bool
+                      && request.resource.data.dueDate is timestamp;
+        
+        // User can update their own todos with valid title and types
+        allow update: if isOwner(userId)
+                      && request.resource.data.title is string
+                      && request.resource.data.title.size() > 0
+                      && request.resource.data.title.size() <= 200
+                      && request.resource.data.isCompleted is bool;
+        
+        // User can delete their own todos
+        allow delete: if isOwner(userId);
+      }
+    }
+    
+    // Deny access to any other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

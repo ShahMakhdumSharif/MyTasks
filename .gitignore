@@ -1,0 +1,29 @@
+# Xcode
+.DS_Store
+*/.DS_Store
+build/
+DerivedData/
+*.moved-aside
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+
+# Swift Package Manager
+.build/
+Packages/
+Package.pins
+Package.resolved
+
+# Firebase & Secret Configuration Files
+# DO NOT commit authentic credentials or private project configs to version control
+GoogleService-Info.plist
+
+# Local Environment Variables & Secrets
+*.env
+*.local
+.env.*
+
+# Temporary / Scratch Files
+*.orig
+*~
+*.swp
